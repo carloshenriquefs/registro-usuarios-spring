@@ -1,8 +1,15 @@
 package com.registro.usuarios.service;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.registro.usuarios.dto.UsuarioRegistroDTO;
@@ -26,4 +33,16 @@ public class UsuarioServiceImpl implements UsuarioService {
 		return usuario;
 	}
 
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		Usuario usuario = usuarioRepository.findByEmail(username);
+		if (usuario == null) {
+			throw new UsernameNotFoundException("Usuario o password inválidos");
+		}
+		return new User(usuario.getEmail(), usuario.getSenha(), mapearAutoridadesRoles(usuario.getRoles()));
+	}
+
+	private Collection<? extends GrantedAuthority> mapearAutoridadesRoles(Collection<Role> roles) {
+		return roles.stream().map(role -> new SimpleGrantedAuthority(role.getNome())).collect(Collectors.toList());
+	}
 }
